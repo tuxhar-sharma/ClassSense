@@ -1,0 +1,7 @@
+export interface ClassDetails { branch: string; semester: string; section: string }
+export function ClassFields({ value, onChange }: { value: ClassDetails; onChange: (value: ClassDetails) => void }) {
+  return <div className="grid gap-3">
+    <label className="block text-xs font-semibold">Branch<select required value={value.branch} onChange={event => onChange({ ...value, branch: event.target.value })} className="w-full border rounded-lg p-2 mt-1"><option value="">Choose branch</option>{['Information Technology', 'Computer Science & Engineering', 'Electronics & Communication', 'Electrical & Electronics'].map(branch => <option key={branch}>{branch}</option>)}</select></label>
+    <div className="grid grid-cols-2 gap-3"><label className="block text-xs font-semibold">Semester<select required value={value.semester} onChange={event => onChange({ ...value, semester: event.target.value })} className="w-full border rounded-lg p-2 mt-1"><option value="">Choose semester</option>{['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th'].map(semester => <option key={semester} value={semester}>{semester} semester</option>)}</select></label><label className="block text-xs font-semibold">Section<input required maxLength={10} placeholder="e.g. IT-1" value={value.section} onChange={event => onChange({ ...value, section: event.target.value })} className="w-full border rounded-lg p-2 mt-1" /></label></div>
+  </div>;
+}
