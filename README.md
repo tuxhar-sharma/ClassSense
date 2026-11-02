@@ -63,3 +63,11 @@ Tests use a temporary database and encryption key, never the working database. T
 Docker Compose provisions PostgreSQL, backend, and nginx frontend on port 5173. Install models before building and configure private secrets/credentials. Container configuration is not yet runtime-verified here. Browser, webcam and representative classroom checks remain necessary; this coding environment has no connected browser.
 
 Stack: React, TypeScript, Vite, Tailwind, Zustand, Recharts; FastAPI, SQLAlchemy, Pydantic; OpenCV, InsightFace, ONNX Runtime; SQLite/PostgreSQL; openpyxl and ReportLab.
+
+## Scheduled attendance and absence alerts
+
+The backend scheduler checks every 15 seconds and automatically opens one attendance session per configured timetable period. Weekly timetable times use India Standard Time (UTC+05:30). Configure real courses, assigned faculty, enrolled students, and timetable slots through the admin screens first. No sample timetable is inserted. Captures must be submitted before the period ends; an unused window expires without marking the class absent. Completed attendance remains available for review and audited retakes.
+
+Faculty can schedule an extra class with start and end date/time on the attendance capture page. Times entered there use the device timezone. Extra classes require an assigned faculty member and enrolled students. Overlapping windows for that course are rejected. Restart the backend after updating to create the additive window and notification tables.
+
+Students receive saved absence alerts with an ?I was present? correction request action. Alerts cover absent students because a missed facial recognition result cannot establish whether someone was physically present. Corrected records disappear from the alert list. Enable device alerts in the student header to allow browser notifications. This version polls while the student is signed in with the app open; it does not provide background push delivery when the app is closed. Browser/OS support and notification permission are required for device popups; the in-app inbox remains available without permission.

@@ -49,3 +49,22 @@ class AttendanceRecord(Base):
     student = relationship("Student", back_populates="attendance_records")
     disputes = relationship("Dispute", back_populates="record", cascade="all, delete-orphan")
     audit_logs = relationship("AuditLog", back_populates="record", cascade="all, delete-orphan")
+
+class AttendanceWindow(Base):
+    __tablename__ = "attendance_windows"
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    course_id = Column(String(36), ForeignKey("courses.id", ondelete="CASCADE"), nullable=False)
+    starts_at = Column(DateTime, nullable=False)
+    ends_at = Column(DateTime, nullable=False)
+    session_type = Column(String(50), nullable=False, default="Lecture")
+    source = Column(String(20), nullable=False, default="timetable")
+    slot_key = Column(String(255), unique=True, nullable=True)
+    session_id = Column(String(36), ForeignKey("attendance_sessions.id", ondelete="SET NULL"), unique=True, nullable=True)
+
+class AbsenceAlert(Base):
+    __tablename__ = "absence_alerts"
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    record_id = Column(String(36), ForeignKey("attendance_records.id", ondelete="CASCADE"), nullable=False, unique=True)
+    student_id = Column(String(36), ForeignKey("students.id", ondelete="CASCADE"), nullable=False, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    read_at = Column(DateTime, nullable=True)

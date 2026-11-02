@@ -5,6 +5,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
+from app.services.session_windows import sync_windows, save_absence_alerts
+from app.models.attendance import AttendanceWindow
 from app.database import get_db
 from app.models.user import User, Faculty, Student
 from app.models.course import Course, Enrollment, TimetableEntry
@@ -88,6 +90,7 @@ def retake_session(session_id: str, payload: SessionRetakeRequest, current_user:
     db.query(VerificationQueue).filter(VerificationQueue.session_id == session_id).delete(synchronize_session=False)
     for item in result["verification_queue_items"]:
         db.add(VerificationQueue(session_id=session_id, **item))
+    save_absence_alerts(db)
     session.image_count = len(payload.images)
     db.commit()
     return {"message": "Attendance retaken. Previous results saved and changes audited.", "revision": payload.expected_revision + 1}
@@ -226,38 +229,22 @@ def get_faculty_courses(faculty_id: str, current_user: User = Depends(require_ro
 
 @router.post("/sessions")
 def start_attendance_session(payload: SessionCreate, current_user: User = Depends(require_role(["faculty", "admin"])), db: Session = Depends(get_db)):
+    sync_windows(db)
     course = db.query(Course).filter(Course.id == payload.course_id).first()
     if not course:
         raise HTTPException(status_code=404, detail="Course not found.")
 
-    faculty = db.query(Faculty).filter(Faculty.user_id == current_user.id).first()
-    if not faculty:
-        # If user is admin or course faculty
-        faculty_id = course.faculty_id
-    else:
-        faculty_id = faculty.id
-
     require_course_access(course, current_user)
     if not course.faculty_id:
         raise HTTPException(status_code=400, detail="Assign a faculty member before starting a session.")
-    session = AttendanceSession(
-        course_id=course.id,
-        faculty_id=faculty_id,
-        session_date=datetime.utcnow(),
-        session_type=payload.session_type,
-        status="in_progress"
-    )
-    db.add(session)
-    db.commit()
-    db.refresh(session)
-
-    return {
-        "session_id": session.id,
-        "course_id": course.id,
-        "course_name": course.course_name,
-        "session_type": session.session_type,
-        "session_date": session.session_date
-    }
+    active = db.query(AttendanceWindow).filter(AttendanceWindow.course_id == course.id,
+        AttendanceWindow.starts_at <= datetime.utcnow(), AttendanceWindow.ends_at > datetime.utcnow()).first()
+    if active and active.session_id:
+        existing = db.get(AttendanceSession, active.session_id)
+        if existing.status != "in_progress":
+            raise HTTPException(status_code=409, detail="This period already has attendance. Use Session History to review or retake it.")
+        return {"session_id": existing.id}
+    raise HTTPException(status_code=409, detail="No attendance window is open. Schedule an extra class or wait for the timetable period.")
 
 @router.post("/sessions/{session_id}/capture")
 def process_session_capture(
@@ -271,6 +258,11 @@ def process_session_capture(
         raise HTTPException(status_code=404, detail="Attendance session not found.")
 
     require_course_access(session.course, current_user)
+    window = db.query(AttendanceWindow).filter_by(session_id=session.id).first()
+    if window and not (window.starts_at <= datetime.utcnow() < window.ends_at):
+        raise HTTPException(status_code=409, detail="This attendance window is closed.")
+    if session.status == "expired":
+        raise HTTPException(status_code=409, detail="This attendance window has expired.")
     if session.status == "completed":
         raise HTTPException(status_code=409, detail="Use the Retake attendance option for a completed session.")
     if not payload.images or len(payload.images) < 1:
@@ -327,6 +319,7 @@ def process_session_capture(
         )
         db.add(queue_item)
 
+    save_absence_alerts(db)
     session.image_count = len(payload.images)
     session.status = "completed"
     db.commit()
@@ -479,6 +472,7 @@ def resolve_verification_item(
         )
         db.add(audit)
 
+    save_absence_alerts(db)
     item.resolution_status = "confirmed" if payload.action == "confirm" else ("rejected" if payload.action == "reject" else "manual")
     item.resolved_by = current_user.id
     item.resolved_at = datetime.utcnow()
@@ -515,6 +509,7 @@ def override_attendance_record(
         reason=payload.reason.strip()
     )
     db.add(audit)
+    save_absence_alerts(db)
     db.commit()
 
     return {"message": "Attendance record updated and logged to audit trail."}

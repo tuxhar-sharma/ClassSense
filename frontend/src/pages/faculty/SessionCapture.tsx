@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useAuthStore } from '../../store/authStore';
-import { api } from '../../api/client';
+import { apiRequest, api } from '../../api/client';
 import { FacultyCourse, SessionResults } from '../../types';
 import { CameraCaptureModal } from '../../components/CameraCaptureModal';
 import { StatusBadge } from '../../components/StatusBadge';
@@ -26,6 +26,21 @@ export const SessionCapture: React.FC<SessionCaptureProps> = ({ onNavigate, init
   const [sessionResults, setSessionResults] = useState<SessionResults | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [error, setError] = useState('');
+  const [windows, setWindows] = useState<{ id: string; starts_at: string; ends_at: string; open: boolean; source: string }[]>([]);
+  const [extraStart, setExtraStart] = useState('');
+  const [extraEnd, setExtraEnd] = useState('');
+  const [savingExtra, setSavingExtra] = useState(false);
+  const loadWindows = useCallback(async () => {
+    if (!selectedCourseId) return;
+    try { setWindows(await apiRequest(`/courses/${selectedCourseId}/windows`)); }
+    catch (e) { setError(e instanceof Error ? e.message : 'Unable to load attendance windows'); }
+  }, [selectedCourseId]);
+  useEffect(() => {
+    void loadWindows();
+    const timer = window.setInterval(() => void loadWindows(), 15000);
+    return () => window.clearInterval(timer);
+  }, [loadWindows]);
+
 
   const fetchCourses = useCallback(async () => {
     if (!user) return;
@@ -125,6 +140,24 @@ export const SessionCapture: React.FC<SessionCaptureProps> = ({ onNavigate, init
             </div>
           </div>
 
+          <div className="space-y-3 rounded-xl border p-4">
+            <h2 className="font-semibold">Attendance windows</h2>
+            <p className="text-sm">Regular windows open automatically during timetable periods (India time). Extra classes can be scheduled below.</p>
+            {windows.length === 0 && <p className="text-sm">No upcoming window today. Ask the administrator to configure the timetable or schedule an extra class.</p>}
+            {windows.map(w => <p key={w.id} className="text-sm">{w.source === 'extra' ? 'Extra class' : 'Timetable'}: {new Date(w.starts_at).toLocaleString()} ? {new Date(w.ends_at).toLocaleTimeString()} ({w.open ? 'Open' : 'Scheduled'})</p>)}
+            <div className="flex flex-wrap gap-3 items-end">
+              <label className="text-sm">Extra class starts<input className="block border rounded p-2" type="datetime-local" value={extraStart} onChange={e => setExtraStart(e.target.value)} /></label>
+              <label className="text-sm">Ends<input className="block border rounded p-2" type="datetime-local" value={extraEnd} onChange={e => setExtraEnd(e.target.value)} /></label>
+              <button disabled={savingExtra || !selectedCourseId || !extraStart || !extraEnd} className="border rounded px-3 py-2 disabled:opacity-50" onClick={async () => {
+                setSavingExtra(true); setError('');
+                try {
+                  await apiRequest(`/courses/${selectedCourseId}/extra-classes`, { method: 'POST', body: JSON.stringify({ starts_at: new Date(extraStart).toISOString(), ends_at: new Date(extraEnd).toISOString(), session_type: sessionType }) });
+                  setExtraStart(''); setExtraEnd(''); await loadWindows();
+                } catch (e) { setError(e instanceof Error ? e.message : 'Unable to schedule extra class'); }
+                finally { setSavingExtra(false); }
+              }}>Schedule extra class</button>
+            </div>
+          </div>
           {/* Launch Multi-Image Trigger */}
           <div className="p-8 border-2 border-dashed border-blue-200 bg-blue-50/40 rounded-2xl text-center space-y-4">
             <div className="w-16 h-16 rounded-2xl bg-[#162456] text-white flex items-center justify-center mx-auto shadow-md">
@@ -142,7 +175,7 @@ export const SessionCapture: React.FC<SessionCaptureProps> = ({ onNavigate, init
 
             <button
               onClick={() => setIsCaptureModalOpen(true)}
-              disabled={isProcessing || !selectedCourseId}
+              disabled={isProcessing || !selectedCourseId || !windows.some(w => w.open)}
               className="px-8 py-3 rounded-xl bg-[#991b1b] hover:bg-[#7f1d1d] text-white text-xs font-bold transition shadow-md flex items-center gap-2 mx-auto disabled:opacity-50"
             >
               {isProcessing ? (

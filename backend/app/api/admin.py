@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.user import User, Student, Faculty, Admin, FacultyWhitelist
 from app.models.course import Course, Enrollment, TimetableEntry
-from app.models.attendance import AttendanceSession, AttendanceRecord
+from app.models.attendance import AttendanceSession, AttendanceRecord, AttendanceWindow
 from app.models.verification import AuditLog
 from app.schemas.admin import (
     FacultyWhitelistItem, PendingFacultyResponse, FacultyApproveReject,
@@ -40,6 +40,12 @@ def update_course_timetable(course_id: str, payload: CourseTimetableUpdate, curr
         if key in seen:
             raise HTTPException(status_code=400, detail="Remove duplicate timetable slots.")
         seen.add(key)
+    for window in db.query(AttendanceWindow).filter_by(course_id=course_id, source="timetable").all():
+        if window.session_id:
+            session = db.get(AttendanceSession, window.session_id)
+            if session.status == "in_progress":
+                session.status = "expired"
+        db.delete(window)
     db.query(TimetableEntry).filter(TimetableEntry.course_id == course_id).delete()
     for student_id in students:
         for slot in payload.slots:

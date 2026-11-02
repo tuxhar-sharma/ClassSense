@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta, timezone
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -87,6 +88,8 @@ def test_clean_setup_to_real_recognition_and_student_attendance(empty_client):
     assert client.put(f"/api/v1/admin/courses/{course}/timetable", headers=admin_headers, json={"slots": [{"day_of_week": "Monday", "start_time": "09:00", "end_time": "10:00", "room": "Project Room", "session_type": "Lecture"}]}).status_code == 200
     uid = student.json()["user_id"]
     assert len(client.get(f"/api/v1/students/{uid}/timetable", headers=student_headers).json()) == 1
+    now = datetime.now(timezone.utc)
+    assert client.post(f"/api/v1/courses/{course}/extra-classes", headers=faculty_headers, json={"starts_at": (now-timedelta(minutes=1)).isoformat(), "ends_at": (now+timedelta(hours=1)).isoformat()}).status_code == 200
     session = client.post("/api/v1/sessions", headers=faculty_headers, json={"course_id": course, "session_type": "Lecture"}).json()["session_id"]
     images = []
     for angle in (-1, 0, 1):

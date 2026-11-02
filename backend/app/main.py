@@ -1,3 +1,6 @@
+import asyncio
+import logging
+from contextlib import asynccontextmanager, suppress
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
@@ -14,7 +17,30 @@ from app.services.face_recognition import face_service
 # Create database tables automatically
 initialize_database()
 
+from app.api.windows import router as windows_router
+from app.database import SessionLocal
+from app.services.session_windows import sync_windows
+
+@asynccontextmanager
+async def lifespan(app):
+    def tick():
+        with SessionLocal() as db:
+            sync_windows(db)
+    async def run():
+        while True:
+            try:
+                await asyncio.to_thread(tick)
+            except Exception:
+                logging.getLogger(__name__).exception("Attendance scheduler failed; retrying")
+            await asyncio.sleep(15)
+    task = asyncio.create_task(run())
+    yield
+    task.cancel()
+    with suppress(asyncio.CancelledError):
+        await task
+
 app = FastAPI(
+    lifespan=lifespan,
     title=settings.PROJECT_NAME,
     version=settings.VERSION,
     description="BPIT Smart Attendance System — Multi-Image Facial Recognition with Confidence-Aware Faculty Verification."
@@ -31,6 +57,7 @@ app.add_middleware(
 
 # Register API v1 Routers
 api_prefix = settings.API_V1_STR
+app.include_router(windows_router, prefix=api_prefix)
 app.include_router(auth_router, prefix=api_prefix)
 app.include_router(students_router, prefix=api_prefix)
 app.include_router(faculty_router, prefix=api_prefix)

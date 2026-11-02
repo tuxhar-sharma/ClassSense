@@ -1,6 +1,6 @@
 import io
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 import openpyxl
 import pytest
@@ -121,6 +121,8 @@ def test_capture_saves_real_appearances_and_prevents_recapture(monkeypatch):
         db.commit()
     monkeypatch.setattr(face_service, "detect_and_extract_classroom_faces", lambda image: [{"embedding": [1.0] + [0.0] * 511, "crop_b64": "thumbnail"}])
     _, headers = login("rajesh.kaushik@bpitindia.edu.in", "faculty")
+    now = datetime.now(timezone.utc)
+    assert client.post(f"/api/v1/courses/{course_id}/extra-classes", headers=headers, json={"starts_at": (now-timedelta(minutes=1)).isoformat(), "ends_at": (now+timedelta(hours=1)).isoformat()}).status_code == 200
     response = client.post("/api/v1/sessions", headers=headers, json={"course_id": course_id, "session_type": "Lecture"})
     session_id = response.json()["session_id"]
     url = f"/api/v1/sessions/{session_id}/capture"
@@ -157,7 +159,7 @@ def test_admin_course_assignment_requires_approved_faculty():
     response = client.post("/api/v1/admin/courses", headers=headers, json=payload)
     assert response.status_code == 200
     _, faculty_headers = login("neha.sharma@bpitindia.edu.in", "faculty")
-    assert client.post("/api/v1/sessions", headers=faculty_headers, json={"course_id": response.json()["course_id"], "session_type": "Lecture"}).status_code == 200
+    assert client.post("/api/v1/sessions", headers=faculty_headers, json={"course_id": response.json()["course_id"], "session_type": "Lecture"}).status_code == 409
 
 
 def test_faculty_csv_conflicts_are_rejected_atomically():

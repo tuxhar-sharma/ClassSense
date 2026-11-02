@@ -1,4 +1,5 @@
 import React from 'react';
+import { AttendanceAlerts } from './AttendanceAlerts';
 import { useAuthStore } from '../store/authStore';
 import { LogOut, UserCheck, Shield, GraduationCap } from 'lucide-react';
 
@@ -14,6 +15,7 @@ export const Navbar: React.FC = () => {
   const currentBadge = user ? roleBadges[user.role] : null;
 
   return (
+    <>
     <header className="h-16 bg-white border-b border-slate-200 sticky top-0 z-40 px-3 md:px-6 flex items-center justify-between shadow-sm">
       {/* Brand */}
       <div className="flex items-center gap-3">
@@ -62,5 +64,7 @@ export const Navbar: React.FC = () => {
         )}
       </div>
     </header>
+    {user?.role === 'student' && <AttendanceAlerts />}
+    </>
   );
 };
