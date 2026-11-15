@@ -66,6 +66,18 @@ Stack: React, TypeScript, Vite, Tailwind, Zustand, Recharts; FastAPI, SQLAlchemy
 
 ## Scheduled attendance and absence alerts
 
+## IT timetable management and faculty assignments
+
+The administrator's **Faculty Members**, **Total Enrolled Students**, and **Active Courses** cards open searchable directories. Faculty entries expand to show their assigned subjects, semester, section, lab batch, rooms and student counts. A course can have multiple approved instructors; theory and practical codes and G1/G2 assignments are kept separate.
+
+Use **Timetable Manager** to select an IT semester and section, create rows manually, or download and upload the UTF-8 CSV template. Editable JSON export/import preserves the full schedule and unscheduled subject assignments. CSV uses one row per subject/batch/time, registered faculty IDs separated by semicolons for co-teachers, and separate rows for parallel options. Scanned PDFs/photos need transcription into the editor; automatic OCR is not implemented. Uploading only previews the file; **Publish timetable & notify** saves a version and delivers in-app notifications to the affected class's registered students and previous/new faculty.
+
+Publication activates on its effective date (India time). Course assignments and scheduled attendance periods follow the current published version, including periods configured before any students join. Students must still be enrolled in the appropriate course roster before attendance is taken; elective choices and unknown lab batches are never inferred. Previous attendance records and timetable publication versions are preserved. Removed subjects become inactive rather than deleting history. Timetable notifications persist and are polled every 15 seconds while signed in; they are not email or background push. Recipients can inspect the exact published version, including future schedules.
+
+Run `.\.venv\Scripts\python.exe backend\import_it_timetable.py` once to import the supplied 2026–27 IT A/B/C schedules for semesters 3, 5 and 7 after registering the listed faculty. It skips classes with an existing publication and is never run automatically on startup. First-semester timetables can be created through the manager when available.
+
+### Attendance windows
+
 The backend scheduler checks every 15 seconds and automatically opens one attendance session per configured timetable period. Weekly timetable times use India Standard Time (UTC+05:30). Configure real courses, assigned faculty, enrolled students, and timetable slots through the admin screens first. No sample timetable is inserted. Captures must be submitted before the period ends; an unused window expires without marking the class absent. Completed attendance remains available for review and audited retakes.
 
 Faculty can schedule an extra class with start and end date/time on the attendance capture page. Times entered there use the device timezone. Extra classes require an assigned faculty member and enrolled students. Overlapping windows for that course are rejected. Restart the backend after updating to create the additive window and notification tables.

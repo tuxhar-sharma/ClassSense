@@ -13,8 +13,9 @@ export const StudentRegister: React.FC<StudentRegisterProps> = ({ onNavigate }) 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [branch, setBranch] = useState('Information Technology');
-  const [semester, setSemester] = useState('6th');
-  const [section, setSection] = useState('IT-1');
+  const [semester, setSemester] = useState('');
+  const [section, setSection] = useState('');
+  const [labGroup, setLabGroup] = useState('');
   const [phone] = useState('');
   
   const [photoBase64, setPhotoBase64] = useState<string | null>(null);
@@ -107,6 +108,7 @@ export const StudentRegister: React.FC<StudentRegisterProps> = ({ onNavigate }) 
         semester,
         branch,
         section,
+        lab_group: labGroup,
         phone,
         photo_base64: photoBase64
       });
@@ -222,23 +224,27 @@ export const StudentRegister: React.FC<StudentRegisterProps> = ({ onNavigate }) 
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">Semester</label>
                   <select
+                    required
                     value={semester}
                     onChange={(e) => setSemester(e.target.value)}
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-[#162456] outline-none"
                   >
+                    <option value="">Choose semester</option>
                     {['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th'].map(semester => <option key={semester} value={semester}>{semester} Semester</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">Section</label>
-                  <input
+                  {branch === 'Information Technology' ? <select required value={section} onChange={e => setSection(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs"><option value="">Choose section</option>{['A', 'B', 'C'].map(s => <option key={s} value={s}>IT {s}</option>)}</select> : <input
                     type="text"
+                    required
                     value={section}
                     onChange={(e) => setSection(e.target.value)}
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-[#162456] outline-none"
-                  />
+                  />}
                 </div>
               </div>
+              {branch === 'Information Technology' && <label className="block text-xs font-semibold text-slate-700">Assigned lab batch<select value={labGroup} onChange={e => setLabGroup(e.target.value)} className="block w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg"><option value="">Not assigned yet — show both</option><option>G1</option><option>G2</option></select><span className="block mt-1 font-normal text-slate-500">IT timetables for semesters 3, 5 and 7 are available automatically. First-semester data is awaiting publication.</span></label>}
             </div>
           </div>
 

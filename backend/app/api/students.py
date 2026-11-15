@@ -16,6 +16,7 @@ from app.schemas.student import (
 from app.api.deps import get_current_user
 from app.api.access import resolve_student
 from app.services.face_recognition import face_service
+from app.services.timetable_management import student_timetable
 
 router = APIRouter(prefix="/students", tags=["Students"])
 
@@ -51,6 +52,7 @@ def get_student_profile(student_id: str, current_user: User = Depends(get_curren
         semester=student.semester,
         branch=student.branch,
         section=student.section,
+        lab_group=student.lab_group,
         phone=student.phone,
         face_enrolled=student.face_enrolled and student.face_model == face_service.model_name,
         photo_url=student.photo_url
@@ -67,6 +69,8 @@ def update_student_profile(student_id: str, payload: StudentProfileUpdate, curre
         student.semester = payload.semester
     if payload.section is not None:
         student.section = payload.section
+    if payload.lab_group is not None:
+        student.lab_group = payload.lab_group
 
     db.commit()
     return {"message": "Profile updated successfully."}
@@ -156,9 +160,11 @@ def get_student_session_history(student_id: str, current_user: User = Depends(ge
 
 @router.get("/{student_id}/timetable", response_model=List[TimetableResponse])
 def get_student_timetable(student_id: str, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    student_id = resolve_student(db, student_id, current_user).id
+    student = resolve_student(db, student_id, current_user)
+    published = student_timetable(db, student)
+    student_id = student.id
     entries = db.query(TimetableEntry).filter(TimetableEntry.student_id == student_id).all()
-    res = []
+    res = [TimetableResponse(**entry) for entry in published["entries"]]
     for e in entries:
         res.append(TimetableResponse(
             id=e.id,
@@ -169,9 +175,16 @@ def get_student_timetable(student_id: str, current_user: User = Depends(get_curr
             start_time=e.start_time,
             end_time=e.end_time,
             room=e.room,
-            session_type=e.session_type
+            session_type=e.session_type,
+            faculty_name=e.course.faculty.full_name if e.course.faculty else "",
+            source="course",
         ))
-    return res
+    day_order = {day: index for index, day in enumerate(["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"])}
+    return sorted(res, key=lambda item: (day_order.get(item.day_of_week, 7), item.start_time, item.course_name))
+
+@router.get("/{student_id}/department-timetable")
+def get_department_timetable(student_id: str, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    return student_timetable(db, resolve_student(db, student_id, current_user))
 
 @router.post("/{student_id}/timetable", response_model=TimetableResponse)
 def add_timetable_entry(student_id: str, payload: TimetableCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):

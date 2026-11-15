@@ -34,5 +34,5 @@ def require_course_access(course, user: User):
         return
     if user.role != "faculty" or not user.faculty_profile or not user.faculty_profile.id_verified:
         raise HTTPException(status_code=403, detail="Verified faculty access required.")
-    if course.faculty_id != user.faculty_profile.id:
+    if course.faculty_id != user.faculty_profile.id and not any(faculty.id == user.faculty_profile.id for faculty in course.instructors):
         raise HTTPException(status_code=403, detail="This course is assigned to another faculty member.")

@@ -32,6 +32,9 @@ import { FacultyApproval } from './pages/admin/FacultyApproval';
 import { CourseManagement } from './pages/admin/CourseManagement';
 import { RosterUpload } from './pages/admin/RosterUpload';
 import { AuditLogs } from './pages/admin/AuditLogs';
+import { AdminDirectory } from './pages/admin/AdminDirectory';
+import { TimetableManager } from './pages/admin/TimetableManager';
+import { FacultyTimetable } from './pages/faculty/FacultyTimetable';
 
 export const App: React.FC = () => {
   const { user, isAuthenticated } = useAuthStore();
@@ -107,6 +110,8 @@ export const App: React.FC = () => {
       switch (currentPage) {
         case 'faculty-dashboard':
           return <FacultyDashboard onNavigate={handleNavigate} />;
+        case 'faculty-timetable':
+          return <FacultyTimetable />;
         case 'class-roster':
           return <ClassRoster initialCourseId={pageParams?.courseId} />;
         case 'session-history':
@@ -129,6 +134,14 @@ export const App: React.FC = () => {
       switch (currentPage) {
         case 'admin-dashboard':
           return <AdminDashboard onNavigate={handleNavigate} />;
+        case 'faculty-directory':
+          return <AdminDirectory kind="faculty" />;
+        case 'student-directory':
+          return <AdminDirectory kind="students" />;
+        case 'course-directory':
+          return <AdminDirectory kind="courses" />;
+        case 'timetable-manager':
+          return <TimetableManager />;
         case 'faculty-approvals':
           return <FacultyApproval />;
         case 'admin-courses':
@@ -147,7 +160,7 @@ export const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#f8fafc] flex flex-col">
-      <Navbar />
+      <Navbar onNavigate={handleNavigate} />
       <div className="flex flex-1">
         <Sidebar
           currentPage={currentPage}

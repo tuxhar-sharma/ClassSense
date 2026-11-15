@@ -62,6 +62,8 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ onNavigate }
   // Calculate total safe bunks and total recovery classes across courses
   const totalSafeBunks = data.courses.reduce((acc, c) => acc + c.safe_bunk_count, 0);
   const totalRecoveryNeeded = data.courses.reduce((acc, c) => acc + c.classes_needed_to_recover, 0);
+  const today = new Intl.DateTimeFormat('en-US', { weekday: 'long', timeZone: 'Asia/Kolkata' }).format(new Date());
+  const todaySchedule = timetable.filter(item => item.day_of_week === today).sort((a, b) => a.start_time.localeCompare(b.start_time));
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
@@ -251,7 +253,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ onNavigate }
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
             <Calendar className="w-4 h-4 text-[#162456]" />
-            Your Academic Schedule (Sample Monday)
+            Today's Schedule · {today} (IST)
           </h3>
           <button
             onClick={() => onNavigate('timetable')}
@@ -262,17 +264,19 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ onNavigate }
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {timetable.slice(0, 3).map((item, idx) => (
+          {todaySchedule.map((item, idx) => (
             <div key={idx} className="p-3.5 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between">
               <div>
                 <p className="text-xs font-bold text-slate-900">{item.course_name}</p>
+                <p className="text-[11px] text-slate-600">{item.faculty_name || 'Faculty not specified'}{item.lab_group ? ` · ${item.lab_group}` : ''}{item.parallel_slot ? ' · Parallel option' : ''}</p>
                 <p className="text-[11px] text-slate-500">{item.day_of_week} • {item.start_time} - {item.end_time}</p>
               </div>
               <span className="text-[10px] font-bold px-2 py-1 rounded bg-blue-100 text-blue-800">
-                {item.room}
+                {item.room || 'Room not specified'}
               </span>
             </div>
           ))}
+          {todaySchedule.length === 0 && <p className="text-sm text-slate-500">No classes listed today. Open the full timetable to check your semester, official section and lab batch.</p>}
         </div>
       </div>
     </div>

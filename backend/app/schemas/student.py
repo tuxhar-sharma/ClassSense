@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional, List, Literal
 from datetime import datetime
 
 class StudentProfileResponse(BaseModel):
@@ -11,6 +11,7 @@ class StudentProfileResponse(BaseModel):
     semester: str
     branch: str
     section: str
+    lab_group: str = ""
     phone: Optional[str] = None
     face_enrolled: bool
     photo_url: Optional[str] = None
@@ -19,6 +20,7 @@ class StudentProfileUpdate(BaseModel):
     phone: Optional[str] = None
     semester: Optional[str] = None
     section: Optional[str] = None
+    lab_group: Optional[Literal["", "G1", "G2"]] = None
 
 class CourseAttendanceSummary(BaseModel):
     course_id: str
@@ -70,6 +72,15 @@ class TimetableResponse(BaseModel):
     end_time: str
     room: str
     session_type: str
+    faculty_name: str = ""
+    lab_group: str = ""
+    period: str = ""
+    source: str = "course"
+    room_source: str = ""
+    parallel_slot: bool = False
+    slot_key: str = ""
+    source_note: str = ""
+    notation: str = ""
 
 class DisputeCreate(BaseModel):
     attendance_record_id: str

@@ -2,19 +2,23 @@
 from datetime import datetime, timedelta, timezone
 from sqlalchemy.exc import IntegrityError
 from app.models.attendance import AttendanceSession, AttendanceWindow, AttendanceRecord, AbsenceAlert
-from app.models.course import Course, TimetableEntry
+from app.models.course import Course, TimetableEntry, CourseScheduledSlot
 
 CAMPUS_TZ = timezone(timedelta(hours=5, minutes=30))
 
 def sync_windows(db, now=None):
+    from app.services.timetable_management import activate_due_timetables
+    activate_due_timetables(db)
     now = now or datetime.utcnow()
     local = now.replace(tzinfo=timezone.utc).astimezone(CAMPUS_TZ)
     slots = db.query(TimetableEntry.course_id, TimetableEntry.start_time,
         TimetableEntry.end_time, TimetableEntry.session_type).filter(
         TimetableEntry.day_of_week == local.strftime("%A")).distinct().all()
-    for course_id, start, end, kind in slots:
+    slots += db.query(CourseScheduledSlot.course_id, CourseScheduledSlot.start_time,
+        CourseScheduledSlot.end_time, CourseScheduledSlot.session_type).filter(CourseScheduledSlot.day_of_week == local.strftime("%A")).distinct().all()
+    for course_id, start, end, kind in set(slots):
         course = db.get(Course, course_id)
-        if not course.faculty_id or not course.enrollments:
+        if not course.is_active or not course.faculty_id or not course.enrollments:
             continue
         try:
             starts = datetime.fromisoformat(f"{local.date()}T{start}").replace(tzinfo=CAMPUS_TZ).astimezone(timezone.utc).replace(tzinfo=None)

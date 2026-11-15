@@ -1,9 +1,10 @@
 import React from 'react';
 import { AttendanceAlerts } from './AttendanceAlerts';
+import { TimetableNotifications } from './TimetableNotifications';
 import { useAuthStore } from '../store/authStore';
 import { LogOut, UserCheck, Shield, GraduationCap } from 'lucide-react';
 
-export const Navbar: React.FC = () => {
+export const Navbar: React.FC<{onNavigate:(page:string)=>void}> = ({onNavigate}) => {
   const { user, logout } = useAuthStore();
 
   const roleBadges: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
@@ -65,6 +66,7 @@ export const Navbar: React.FC = () => {
       </div>
     </header>
     {user?.role === 'student' && <AttendanceAlerts />}
+    {(user?.role === 'student' || user?.role === 'faculty') && <TimetableNotifications key={user.id} role={user.role} onNavigate={onNavigate} />}
     </>
   );
 };

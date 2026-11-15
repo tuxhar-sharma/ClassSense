@@ -70,7 +70,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
 
       {/* KPI Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex items-center justify-between">
+        <button onClick={() => onNavigate('student-directory')} className="text-left bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex items-center justify-between hover:border-blue-400">
           <div>
             <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
               Total Enrolled Students
@@ -85,9 +85,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
           <div className="p-3 rounded-2xl bg-blue-50 text-blue-600">
             <Users className="w-6 h-6" />
           </div>
-        </div>
+        </button>
 
-        <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex items-center justify-between">
+        <button onClick={() => onNavigate('faculty-directory')} className="text-left bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex items-center justify-between hover:border-purple-400">
           <div>
             <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
               Faculty Members
@@ -102,9 +102,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
           <div className="p-3 rounded-2xl bg-purple-50 text-purple-600">
             <UserCheck className="w-6 h-6" />
           </div>
-        </div>
+        </button>
 
-        <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex items-center justify-between">
+        <button onClick={() => onNavigate('course-directory')} className="text-left bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex items-center justify-between hover:border-emerald-400">
           <div>
             <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
               Active Courses
@@ -119,7 +119,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
           <div className="p-3 rounded-2xl bg-emerald-50 text-emerald-600">
             <BookOpen className="w-6 h-6" />
           </div>
-        </div>
+        </button>
 
         <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex items-center justify-between">
           <div>
@@ -174,6 +174,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
       </div>
 
       {/* Quick Action Navigation Grid */}
+      <button onClick={() => onNavigate('timetable-manager')} className="w-full text-left rounded-2xl bg-[#162456] text-white p-5"><h2 className="font-bold">Create or upload a timetable</h2><p className="text-sm text-blue-100 mt-1">Review class schedules, assign faculty and publish updates with notifications.</p></button>
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <button
           onClick={() => onNavigate('faculty-approvals')}

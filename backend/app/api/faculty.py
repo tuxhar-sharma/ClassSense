@@ -22,6 +22,7 @@ from app.api.deps import get_current_user, require_role
 from app.api.access import resolve_faculty, require_course_access
 from app.services.aggregation import aggregation_service
 from app.services.face_recognition import face_service, RecognitionUnavailable
+from app.services.timetable_management import faculty_courses, cohort_key
 
 router = APIRouter(tags=["Faculty"])
 
@@ -103,6 +104,10 @@ def owned_course(course_id, current_user, db):
     return course
 
 def matching_class_students(course, db):
+    if course.timetable_key:
+        target = cohort_key(course)
+        ids = [student.id for student in db.query(Student).all() if cohort_key(student) == target and (not course.lab_group or student.lab_group == course.lab_group)]
+        return db.query(Student).filter(Student.id.in_(ids))
     return db.query(Student).filter(
         func.lower(func.trim(Student.branch)) == course.branch.strip().lower(),
         func.lower(func.trim(Student.semester)) == course.semester.strip().lower(),
@@ -156,7 +161,7 @@ def enroll_course_students(course_id: str, payload: CourseEnrollmentRequest, cur
 def get_pending_disputes(current_user: User = Depends(require_role(["faculty", "admin"])), db: Session = Depends(get_db)):
     query = db.query(Dispute).join(AttendanceRecord).join(AttendanceSession).join(Course).filter(Dispute.status == "pending")
     if current_user.role == "faculty":
-        query = query.filter(Course.faculty_id == current_user.faculty_profile.id)
+        query = query.filter(Course.id.in_(faculty_courses(db, current_user.faculty_profile.id, active_only=False).with_entities(Course.id)))
     return [{
         "id": dispute.id,
         "student_name": dispute.student.full_name,
@@ -212,7 +217,7 @@ def get_course_attendance_records(course_id: str, current_user: User = Depends(r
 @router.get("/faculty/{faculty_id}/courses", response_model=List[CourseItemResponse])
 def get_faculty_courses(faculty_id: str, current_user: User = Depends(require_role(["faculty", "admin"])), db: Session = Depends(get_db)):
     faculty_id = resolve_faculty(db, faculty_id, current_user).id
-    courses = db.query(Course).filter(Course.faculty_id == faculty_id).all()
+    courses = faculty_courses(db, faculty_id).all()
     res = []
     for c in courses:
         enrolled_cnt = db.query(Enrollment).filter(Enrollment.course_id == c.id).count()
@@ -223,7 +228,7 @@ def get_faculty_courses(faculty_id: str, current_user: User = Depends(require_ro
             room=c.room,
             credits=c.credits,
             enrolled_count=enrolled_cnt,
-             branch=c.branch, semester=c.semester, section=c.section
+             branch=c.branch, semester=c.semester, section=c.section, lab_group=c.lab_group, subject_code=c.subject_code
         ))
     return res
 
@@ -385,7 +390,7 @@ def get_verification_queue(current_user: User = Depends(require_role(["faculty",
     query = db.query(VerificationQueue).filter(VerificationQueue.resolution_status == "pending")
 
     if faculty:
-        faculty_course_ids = [c.id for c in faculty.courses]
+        faculty_course_ids = [c.id for c in faculty_courses(db, faculty.id, active_only=False).all()]
         query = query.join(AttendanceSession).filter(AttendanceSession.course_id.in_(faculty_course_ids))
 
     items = query.order_by(VerificationQueue.id.desc()).all()
@@ -522,7 +527,8 @@ def get_faculty_analytics(
     db: Session = Depends(get_db)
 ):
     faculty_id = resolve_faculty(db, faculty_id, current_user).id
-    query = db.query(AttendanceSession).filter(AttendanceSession.faculty_id == faculty_id)
+    assigned_courses = faculty_courses(db, faculty_id, active_only=False).all()
+    query = db.query(AttendanceSession).filter(AttendanceSession.course_id.in_([course.id for course in assigned_courses]))
     if course_id:
         query = query.filter(AttendanceSession.course_id == course_id)
 
@@ -552,7 +558,7 @@ def get_faculty_analytics(
     at_risk_list = []
     faculty = db.query(Faculty).filter(Faculty.id == faculty_id).first()
     if faculty:
-        for c in faculty.courses:
+        for c in assigned_courses:
             if course_id and c.id != course_id:
                 continue
             for enr in c.enrollments:
@@ -579,7 +585,7 @@ def get_faculty_analytics(
                         classes_needed=needed
                     ))
 
-    total_enrolled = sum(len(c.enrollments) for c in faculty.courses) if faculty else 0
+    total_enrolled = sum(len(c.enrollments) for c in assigned_courses) if faculty else 0
 
     return FacultyAnalyticsResponse(
         course_id=course_id,

@@ -92,6 +92,7 @@ def register_student(payload: StudentRegisterRequest, db: Session = Depends(get_
         semester=payload.semester,
         branch=payload.branch,
         section=payload.section,
+        lab_group=payload.lab_group,
         phone=payload.phone,
         face_embedding=face_emb,
         face_enrolled=face_enrolled,

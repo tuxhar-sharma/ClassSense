@@ -59,8 +59,9 @@ def initialize_database():
     changes = {
         "attendance_records": {"appearances": "INTEGER NOT NULL DEFAULT 0"},
         "attendance_sessions": {"revision": "INTEGER NOT NULL DEFAULT 1"},
-        "students": {"face_model": "VARCHAR(50) NOT NULL DEFAULT 'legacy'"},
-        "courses": {"branch": "VARCHAR(50) NOT NULL DEFAULT ''", "semester": "VARCHAR(10) NOT NULL DEFAULT ''", "section": "VARCHAR(10) NOT NULL DEFAULT ''"},
+        "students": {"face_model": "VARCHAR(50) NOT NULL DEFAULT 'legacy'", "lab_group": "VARCHAR(2) NOT NULL DEFAULT ''"},
+        "courses": {"branch": "VARCHAR(50) NOT NULL DEFAULT ''", "semester": "VARCHAR(10) NOT NULL DEFAULT ''", "section": "VARCHAR(10) NOT NULL DEFAULT ''",
+            "subject_code": "VARCHAR(50) NOT NULL DEFAULT ''", "lab_group": "VARCHAR(2) NOT NULL DEFAULT ''", "timetable_key": "VARCHAR(255)", "is_active": "BOOLEAN NOT NULL DEFAULT true"},
     }
     with engine.begin() as connection:
         # Enrollment IDs have no dependent tables. Keep one membership per class/student.
@@ -78,6 +79,7 @@ def initialize_database():
                 if name not in existing:
                     connection.execute(text(f"ALTER TABLE {table} ADD COLUMN {name} {declaration}"))
         rows = connection.execute(text("SELECT id, face_embedding FROM students WHERE face_embedding IS NOT NULL")).all()
+        connection.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS uq_course_timetable_key ON courses (timetable_key)"))
         for student_id, embedding in rows:
             if not embedding.startswith(PREFIX):
                 encrypted = encrypt_embedding(json.loads(embedding))

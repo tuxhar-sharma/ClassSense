@@ -28,6 +28,7 @@ class Student(Base):
     semester = Column(String(10), nullable=False, default="6th")
     branch = Column(String(50), nullable=False, default="Information Technology")
     section = Column(String(10), nullable=False, default="IT-1")
+    lab_group = Column(String(2), nullable=False, default="", server_default="")
     phone = Column(String(20), nullable=True)
     face_embedding = Column(VectorType, nullable=True)
     face_enrolled = Column(Boolean, default=False)

@@ -48,6 +48,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const facultyLinks: SidebarLink[] = [
     { id: 'faculty-dashboard', label: 'Course Overview', icon: LayoutDashboard },
+    { id: 'faculty-timetable', label: 'My Teaching Timetable', icon: Calendar },
     { id: 'class-roster', label: 'Class Roster & Enrollment', icon: Users },
     { id: 'capture', label: 'Classroom AI Capture', icon: Camera },
     { id: 'session-history', label: 'Session History & Retakes', icon: Clock },
@@ -72,6 +73,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
       badgeColor: 'bg-purple-600'
     },
     { id: 'admin-courses', label: 'Course Directory', icon: BookOpen },
+    { id: 'faculty-directory', label: 'Faculty & Assignments', icon: Users },
+    { id: 'student-directory', label: 'Registered Students', icon: Users },
+    { id: 'timetable-manager', label: 'Timetable Manager', icon: Calendar },
     { id: 'roster-upload', label: 'Bulk Roster Import', icon: FileSpreadsheet },
     { id: 'audit-logs', label: 'Immutable Audit Trail', icon: History },
   ];

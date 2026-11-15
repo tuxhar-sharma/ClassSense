@@ -24,6 +24,7 @@ export interface StudentProfile {
   semester: string;
   branch: string;
   section: string;
+  lab_group: string;
   phone?: string;
   face_enrolled: boolean;
   photo_url?: string;
@@ -74,9 +75,33 @@ export interface TimetableItem {
   end_time: string;
   room: string;
   session_type: string;
+  faculty_name?: string;
+  lab_group?: string;
+  period?: string;
+  source?: string;
+  room_source?: string;
+  parallel_slot?: boolean;
+  slot_key?: string;
+  source_note?: string;
+  notation?: string;
+}
+
+export interface DepartmentTimetable {
+  available: boolean;
+  class_label: string;
+  printed_semester_label: string;
+  lab_group: string;
+  message: string;
+  entries: TimetableItem[];
+  warnings: string[];
+  periods: { period: string; start_time: string; end_time: string }[];
+  faculty_assignments: { subject: string; code: string; faculty_name: string; lab_group: string; scheduled: boolean }[];
+  source: { title: string; document: string; academic_year: string; effective_from: string; issued_on: string; timezone: string; institute: string; signed_by: string; issuer: string; notes: string[] };
 }
 
 export interface FacultyCourse {
+  lab_group?: string;
+  subject_code?: string;
   branch: string;
   semester: string;
   section: string;

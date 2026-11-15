@@ -30,16 +30,40 @@ export const SessionCapture: React.FC<SessionCaptureProps> = ({ onNavigate, init
   const [extraStart, setExtraStart] = useState('');
   const [extraEnd, setExtraEnd] = useState('');
   const [savingExtra, setSavingExtra] = useState(false);
+  const selectedCourse = courses.find(course => course.id === selectedCourseId);
+  const hasStudents = (selectedCourse?.enrolled_count ?? 0) > 0;
+  const hasOpenWindow = windows.some(window => window.open);
   const loadWindows = useCallback(async () => {
     if (!selectedCourseId) return;
     try { setWindows(await apiRequest(`/courses/${selectedCourseId}/windows`)); }
     catch (e) { setError(e instanceof Error ? e.message : 'Unable to load attendance windows'); }
   }, [selectedCourseId]);
   useEffect(() => {
+    setWindows([]);
     void loadWindows();
     const timer = window.setInterval(() => void loadWindows(), 15000);
     return () => window.clearInterval(timer);
   }, [loadWindows]);
+
+  const startExtraClassNow = async () => {
+    if (!selectedCourseId || !hasStudents || savingExtra) return;
+    setSavingExtra(true);
+    setError('');
+    try {
+      const startsAt = new Date();
+      const endsAt = new Date(startsAt.getTime() + 60 * 60 * 1000);
+      await apiRequest(`/courses/${selectedCourseId}/extra-classes`, {
+        method: 'POST',
+        body: JSON.stringify({ starts_at: startsAt.toISOString(), ends_at: endsAt.toISOString(), session_type: sessionType }),
+      });
+      await loadWindows();
+      setIsCaptureModalOpen(true);
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Unable to start an extra class.');
+    } finally {
+      setSavingExtra(false);
+    }
+  };
 
 
   const fetchCourses = useCallback(async () => {
@@ -68,6 +92,7 @@ export const SessionCapture: React.FC<SessionCaptureProps> = ({ onNavigate, init
     }
 
     setIsProcessing(true);
+    setError('');
     setStatusMessage("Initializing session...");
 
     try {
@@ -83,7 +108,7 @@ export const SessionCapture: React.FC<SessionCaptureProps> = ({ onNavigate, init
       const results = await api.getSessionResults(session.session_id);
       setSessionResults(results);
     } catch (err: any) {
-      alert("Session processing error: " + err.message);
+      setError("Session processing error: " + err.message);
     } finally {
       setIsProcessing(false);
       setStatusMessage(null);
@@ -141,7 +166,15 @@ export const SessionCapture: React.FC<SessionCaptureProps> = ({ onNavigate, init
           </div>
 
           <div className="space-y-3 rounded-xl border p-4">
+            {selectedCourse && !hasStudents && <div className="rounded-lg bg-amber-50 p-3 space-y-2">
+              <p className="text-sm">This course has no enrolled students. Enroll your class before taking attendance.</p>
+              <button onClick={() => onNavigate('class-roster', { courseId: selectedCourseId })} className="text-sm font-semibold text-blue-700 underline">Open class roster & enroll students</button>
+            </div>}
             <h2 className="font-semibold">Attendance windows</h2>
+            {hasStudents && !hasOpenWindow && <div className="rounded-lg bg-blue-50 p-3 space-y-2">
+              <p className="text-sm">Attendance capture needs an open class period. Start a one-hour extra class now to take attendance immediately, or schedule a class below.</p>
+              <button disabled={savingExtra || isProcessing} onClick={() => void startExtraClassNow()} className="rounded-lg bg-[#162456] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">{savingExtra ? 'Starting extra class...' : 'Start extra class now & take attendance'}</button>
+            </div>}
             <p className="text-sm">Regular windows open automatically during timetable periods (India time). Extra classes can be scheduled below.</p>
             {windows.length === 0 && <p className="text-sm">No upcoming window today. Ask the administrator to configure the timetable or schedule an extra class.</p>}
             {windows.map(w => <p key={w.id} className="text-sm">{w.source === 'extra' ? 'Extra class' : 'Timetable'}: {new Date(w.starts_at).toLocaleString()} ? {new Date(w.ends_at).toLocaleTimeString()} ({w.open ? 'Open' : 'Scheduled'})</p>)}
@@ -175,7 +208,7 @@ export const SessionCapture: React.FC<SessionCaptureProps> = ({ onNavigate, init
 
             <button
               onClick={() => setIsCaptureModalOpen(true)}
-              disabled={isProcessing || !selectedCourseId || !windows.some(w => w.open)}
+              disabled={isProcessing || !hasStudents || !hasOpenWindow}
               className="px-8 py-3 rounded-xl bg-[#991b1b] hover:bg-[#7f1d1d] text-white text-xs font-bold transition shadow-md flex items-center gap-2 mx-auto disabled:opacity-50"
             >
               {isProcessing ? (

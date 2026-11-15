@@ -12,6 +12,7 @@ from app.api.students import router as students_router
 from app.api.faculty import router as faculty_router
 from app.api.admin import router as admin_router
 from app.api.reports import router as reports_router
+from app.api.timetables import router as timetables_router
 from app.services.face_recognition import face_service
 
 # Create database tables automatically
@@ -63,6 +64,7 @@ app.include_router(students_router, prefix=api_prefix)
 app.include_router(faculty_router, prefix=api_prefix)
 app.include_router(admin_router, prefix=api_prefix)
 app.include_router(reports_router, prefix=api_prefix)
+app.include_router(timetables_router, prefix=api_prefix)
 
 @app.get("/health", tags=["Health"])
 @app.get(f"{api_prefix}/health", tags=["Health"])

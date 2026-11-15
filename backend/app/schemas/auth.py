@@ -39,6 +39,7 @@ class StudentRegisterRequest(RegistrationRequest):
     semester: str = "6th"
     branch: str = "Information Technology"
     section: str = "IT-1"
+    lab_group: Literal["", "G1", "G2"] = ""
     phone: Optional[str] = None
     photo_base64: Optional[str] = None # Optional selfie provided during registration
 

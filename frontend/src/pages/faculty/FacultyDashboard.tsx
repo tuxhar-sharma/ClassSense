@@ -183,7 +183,7 @@ export const FacultyDashboard: React.FC<FacultyDashboardProps> = ({ onNavigate }
                   </span>
                   <span className="text-xs text-slate-500 font-medium">Room: {course.room}</span>
                 </div>
-                <h3 className="font-bold text-slate-900 text-lg mt-3">{course.course_name}</h3>
+                <h3 className="font-bold text-slate-900 text-lg mt-3">{course.course_name} {course.lab_group}</h3>
                 <p className="text-xs text-slate-500 mt-1">{course.branch} · {course.semester} · {course.section}</p>
                 <button onClick={() => onNavigate('class-roster', { courseId: course.id })} className="text-xs font-semibold text-blue-700 py-2">Manage class roster & enroll students</button>
                 <p className="text-xs text-slate-500 mt-1">{course.credits} Credits • Lecture & Lab</p>

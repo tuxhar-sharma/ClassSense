@@ -29,6 +29,8 @@ def update_course_timetable(course_id: str, payload: CourseTimetableUpdate, curr
     course = db.query(Course).filter(Course.id == course_id).first()
     if not course:
         raise HTTPException(status_code=404, detail="Course not found.")
+    if course.timetable_key:
+        raise HTTPException(409, 'This course follows a published timetable. Update it through Timetable Manager.')
     students = [enrollment.student_id for enrollment in course.enrollments]
     if not students:
         raise HTTPException(status_code=400, detail="Import this course's roster before setting its timetable.")
@@ -63,6 +65,8 @@ def update_course(course_id: str, payload: CourseCreate, current_user: User = De
     course = db.query(Course).filter(Course.id == course_id).first()
     if not course:
         raise HTTPException(status_code=404, detail="Course not found.")
+    if course.timetable_key:
+        raise HTTPException(409, 'This course follows a published timetable. Update its assignment through Timetable Manager.')
     validate_course(payload, db)
     class_fields = (payload.branch.strip().lower(), payload.semester.strip().lower(), payload.section.strip().lower())
     if all(class_fields) and any((enrollment.student.branch.strip().lower(), enrollment.student.semester.strip().lower(), enrollment.student.section.strip().lower()) != class_fields for enrollment in course.enrollments):
@@ -87,7 +91,7 @@ def get_admin_stats(current_user: User = Depends(require_role(["admin"])), db: S
     tot_students = db.query(Student).count()
     tot_faculty = db.query(Faculty).count()
     pending_approvals = db.query(Faculty).filter(Faculty.id_verified == False).count()
-    tot_courses = db.query(Course).count()
+    tot_courses = db.query(Course).filter_by(is_active=True).count()
     tot_sessions = db.query(AttendanceSession).filter(AttendanceSession.status == "completed").count()
 
     total_records = db.query(AttendanceRecord).count()
@@ -200,7 +204,7 @@ def reject_faculty(
 
 @router.get("/courses")
 def get_all_courses(current_user: User = Depends(require_role(["admin"])), db: Session = Depends(get_db)):
-    courses = db.query(Course).all()
+    courses = db.query(Course).filter_by(is_active=True).all()
     res = []
     for c in courses:
         enrolled_cnt = db.query(Enrollment).filter(Enrollment.course_id == c.id).count()

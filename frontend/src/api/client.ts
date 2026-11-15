@@ -1,6 +1,7 @@
 import { useAuthStore } from '../store/authStore';
+import type { DepartmentTimetable } from '../types';
 
-const API_BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1").replace(/\/$/, '');
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || "/api/v1").replace(/\/$/, '');
 
 export async function apiRequest<T>(
   endpoint: string,
@@ -51,6 +52,8 @@ export const api = {
   getStudentAttendance: (id: string) => apiRequest<any>(`/students/${id}/attendance`),
   getStudentSessions: (id: string) => apiRequest<any>(`/students/${id}/sessions`),
   getStudentTimetable: (id: string) => apiRequest<any>(`/students/${id}/timetable`),
+  getDepartmentTimetable: (id: string) => apiRequest<DepartmentTimetable>(`/students/${id}/department-timetable`),
+  updateStudentProfile: (id: string, data: { semester?: string; section?: string; lab_group?: string }) => apiRequest<{ message: string }>(`/students/${id}/profile`, { method: 'PUT', body: JSON.stringify(data) }),
   raiseDispute: (attendance_record_id: string, reason: string) => 
     apiRequest<any>("/students/disputes", { method: "POST", body: JSON.stringify({ attendance_record_id, reason }) }),
 

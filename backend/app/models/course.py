@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import Column, String, Integer, ForeignKey, Index
+from sqlalchemy import Column, String, Integer, ForeignKey, Index, Boolean
 from sqlalchemy.orm import relationship
 from app.database import Base
 
@@ -15,11 +15,31 @@ class Course(Base):
     branch = Column(String(50), nullable=False, default="", server_default="")
     semester = Column(String(10), nullable=False, default="", server_default="")
     section = Column(String(10), nullable=False, default="", server_default="")
+    subject_code = Column(String(50), nullable=False, default="", server_default="")
+    lab_group = Column(String(2), nullable=False, default="", server_default="")
+    timetable_key = Column(String(255), nullable=True, unique=True)
+    is_active = Column(Boolean, nullable=False, default=True, server_default="true")
 
     faculty = relationship("Faculty", back_populates="courses")
+    instructors = relationship("Faculty", secondary="course_instructors")
     enrollments = relationship("Enrollment", back_populates="course", cascade="all, delete-orphan")
     attendance_sessions = relationship("AttendanceSession", back_populates="course", cascade="all, delete-orphan")
     timetable_entries = relationship("TimetableEntry", back_populates="course", cascade="all, delete-orphan")
+
+class CourseInstructor(Base):
+    __tablename__ = "course_instructors"
+    course_id = Column(String(36), ForeignKey("courses.id", ondelete="CASCADE"), primary_key=True)
+    faculty_id = Column(String(36), ForeignKey("faculty.id", ondelete="CASCADE"), primary_key=True)
+
+class CourseScheduledSlot(Base):
+    __tablename__ = "course_scheduled_slots"
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    course_id = Column(String(36), ForeignKey("courses.id", ondelete="CASCADE"), nullable=False, index=True)
+    day_of_week = Column(String(20), nullable=False)
+    start_time = Column(String(10), nullable=False)
+    end_time = Column(String(10), nullable=False)
+    room = Column(String(50), nullable=False, default="")
+    session_type = Column(String(50), nullable=False, default="Lecture")
 
 class Enrollment(Base):
     __tablename__ = "enrollments"

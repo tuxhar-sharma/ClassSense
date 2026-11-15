@@ -23,6 +23,8 @@ class CourseItemResponse(BaseModel):
     branch: str = ""
     semester: str = ""
     section: str = ""
+    lab_group: str = ""
+    subject_code: str = ""
 
 class CourseEnrollmentRequest(BaseModel):
     student_ids: List[str] = Field(min_length=1, max_length=300)
