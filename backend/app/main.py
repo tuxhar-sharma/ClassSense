@@ -1,10 +1,13 @@
 import asyncio
 import logging
 from contextlib import asynccontextmanager, suppress
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends, HTTPException
+from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
-from app.database import engine, Base, initialize_database
+from app.database import engine, Base, initialize_database, get_db
 import app.models # Register all models
 
 from app.api.auth import router as auth_router
@@ -68,7 +71,11 @@ app.include_router(timetables_router, prefix=api_prefix)
 
 @app.get("/health", tags=["Health"])
 @app.get(f"{api_prefix}/health", tags=["Health"])
-def health_check():
+def health_check(db: Session = Depends(get_db)):
+    try:
+        db.execute(text("SELECT 1"))
+    except SQLAlchemyError:
+        raise HTTPException(status_code=503, detail="Database connection unavailable.") from None
     return {
         "status": "healthy",
         "service": "BPIT Smart Attendance System Backend",

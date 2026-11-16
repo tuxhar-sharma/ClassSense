@@ -69,6 +69,8 @@ Full classroom frames are processed in memory. Enrollment thumbnails and review 
 
 ## Checks
 
+The **Backend health check** GitHub Actions workflow calls the deployed `/health` endpoint every five minutes. After Render deployment, add a repository Actions variable named `RENDER_HEALTH_URL` containing `https://YOUR-RENDER-SERVICE.onrender.com/health` under **Settings → Secrets and variables → Actions → Variables**. Run it once from **Actions → Backend health check → Run workflow** to verify the URL. Until the variable is set, the job is skipped. The endpoint verifies a database query and returns HTTP 503 if the database is unavailable. GitHub schedules can be delayed, and public-repository schedules can be disabled after 60 days of inactivity, so this is best-effort monitoring rather than an availability guarantee.
+
 ```powershell
 .\.venv\Scripts\python.exe -m pytest -q
 npm.cmd --prefix frontend run build
