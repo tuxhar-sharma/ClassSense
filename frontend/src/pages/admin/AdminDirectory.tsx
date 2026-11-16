@@ -8,6 +8,17 @@ export function AdminDirectory({ kind }: { kind: 'faculty' | 'students' | 'cours
   const [search, setSearch] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState(false);
+  async function deleteStudent(person: DirectoryPerson) {
+    if (!window.confirm(`Permanently delete ${person.full_name}? This removes the login, face template, enrollments, timetable entries and linked attendance records across all courses. This cannot be undone.`)) return;
+    setDeleting(true); setError('');
+    try {
+      await apiRequest(`/students/${person.id}`, { method: 'DELETE' });
+      setPeople(current => current.filter(item => item.id !== person.id));
+      window.dispatchEvent(new Event('classsense-data-changed'));
+    } catch (error) { setError(error instanceof Error ? error.message : 'Unable to delete student.'); }
+    finally { setDeleting(false); }
+  }
   useEffect(() => {
     let active = true;
     setLoading(true); setError('');
@@ -28,6 +39,7 @@ export function AdminDirectory({ kind }: { kind: 'faculty' | 'students' | 'cours
     {!loading && !error && (kind === 'courses' ? <section className="rounded-2xl border bg-white">{courseTable(courses.filter(matches))}</section> : people.filter(matches).map(person => <details key={person.id} className="rounded-2xl border bg-white p-4">
       <summary className="cursor-pointer"><span className="font-bold">{person.full_name}</span><span className="text-sm text-blue-700 ml-3">{person.courses.length} assigned courses</span><p className="text-xs text-slate-500 mt-1">{person.email} · {person.employee_id || person.enrollment_no}{kind === 'faculty' ? ` · ${person.verified ? 'Approved' : 'Pending approval'}` : ` · ${person.semester} · ${person.section} ${person.lab_group || ''}`}</p></summary>
       <div className="mt-4">{courseTable(person.courses)}</div>
+      {kind === 'students' && <button disabled={deleting} onClick={() => { void deleteStudent(person); }} className="mt-3 text-sm text-red-700 border border-red-200 rounded-lg px-3 py-2 disabled:opacity-50">Delete student account</button>}
     </details>))}
     {!loading && !error && !displayed.length && <p className="text-sm text-slate-500">No matching records.</p>}
   </div>;

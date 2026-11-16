@@ -6,7 +6,7 @@ from app.database import get_db
 from app.config import settings
 from app.models.user import User, Student, Faculty, FacultyWhitelist, Admin
 from app.schemas.auth import (
-    Token, LoginRequest, StudentRegisterRequest, FacultyRegisterRequest, FaceEnrollRequest, InitialAdminRequest
+    Token, LoginRequest, StudentRegisterRequest, FacultyRegisterRequest, FaceEnrollRequest, InitialAdminRequest, ChangePasswordRequest
 )
 from app.api.deps import verify_password, get_password_hash, create_access_token, get_current_user
 from app.services.face_recognition import face_service, RecognitionUnavailable
@@ -49,6 +49,12 @@ def validate_college_domain(email: str):
 @router.post("/student/register", response_model=Token)
 def register_student(payload: StudentRegisterRequest, db: Session = Depends(get_db)):
     validate_college_domain(payload.email)
+    name = ''.join(payload.full_name.split())
+    if not name:
+        raise HTTPException(status_code=400, detail="Student name cannot be blank.")
+    initial_password = payload.password or (name + '123@bBPIT')
+    if len(initial_password.encode('utf-8')) > 72:
+        raise HTTPException(status_code=400, detail="Name is too long for the default password (maximum 63 UTF-8 bytes without spaces).")
     
     # Check if email exists
     if db.query(User).filter(func.lower(User.email) == payload.email).first():
@@ -78,7 +84,7 @@ def register_student(payload: StudentRegisterRequest, db: Session = Depends(get_
     # Create User
     new_user = User(
         email=payload.email,
-        password_hash=get_password_hash(payload.password),
+        password_hash=get_password_hash(initial_password),
         role="student"
     )
     db.add(new_user)
@@ -210,6 +216,16 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
 @router.post("/logout")
 def logout(current_user: User = Depends(get_current_user)):
     return {"message": "Session logged out successfully."}
+
+@router.post("/change-password")
+def change_password(payload: ChangePasswordRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if not verify_password(payload.current_password, current_user.password_hash):
+        raise HTTPException(status_code=400, detail="Current password is incorrect.")
+    if verify_password(payload.password, current_user.password_hash):
+        raise HTTPException(status_code=400, detail="Choose a different new password.")
+    current_user.password_hash = get_password_hash(payload.password)
+    db.commit()
+    return {"message": "Password changed successfully. Use your new password next time you sign in."}
 
 @router.post("/student/enroll-face")
 def enroll_student_face(

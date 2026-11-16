@@ -1,3 +1,4 @@
+import { PasswordInput } from '../../components/PasswordInput';
 import React, { useState } from 'react';
 import { api } from '../../api/client';
 import { ArrowLeft, UserCheck, Check, AlertCircle, ShieldAlert, Upload } from 'lucide-react';
@@ -151,8 +152,7 @@ export const FacultyRegister: React.FC<FacultyRegisterProps> = ({ onNavigate }) 
               </div>
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">Password</label>
-                <input
-                  type="password"
+                <PasswordInput
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}

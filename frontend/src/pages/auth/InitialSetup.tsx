@@ -1,3 +1,4 @@
+import { PasswordInput } from '../../components/PasswordInput';
 import { useState } from 'react';
 import { api } from '../../api/client';
 import { useAuthStore } from '../../store/authStore';
@@ -32,8 +33,8 @@ export function InitialSetup() {
       <form onSubmit={submit} className="space-y-4">
         <label className="block text-sm font-medium">Full name<input required minLength={2} maxLength={255} autoComplete="name" value={name} onChange={event => setName(event.target.value)} className="block w-full border rounded-lg p-2 mt-1" /></label>
         <label className="block text-sm font-medium">Administrator email<input required type="email" autoComplete="email" value={email} onChange={event => setEmail(event.target.value)} className="block w-full border rounded-lg p-2 mt-1" /></label>
-        <label className="block text-sm font-medium">Password<input required type="password" minLength={8} maxLength={72} autoComplete="new-password" value={password} onChange={event => setPassword(event.target.value)} className="block w-full border rounded-lg p-2 mt-1" /><span className="text-xs text-slate-500">At least 8 characters. Keep this password for future sign-ins.</span></label>
-        <label className="block text-sm font-medium">Confirm password<input required type="password" autoComplete="new-password" value={confirm} onChange={event => setConfirm(event.target.value)} className="block w-full border rounded-lg p-2 mt-1" /></label>
+        <label className="block text-sm font-medium">Password<PasswordInput required minLength={8} maxLength={72} autoComplete="new-password" value={password} onChange={event => setPassword(event.target.value)} className="block w-full border rounded-lg p-2 mt-1" /><span className="text-xs text-slate-500">At least 8 characters. Keep this password for future sign-ins.</span></label>
+        <label className="block text-sm font-medium">Confirm password<PasswordInput required autoComplete="new-password" value={confirm} onChange={event => setConfirm(event.target.value)} className="block w-full border rounded-lg p-2 mt-1" /></label>
         <button disabled={saving} className="w-full rounded-lg bg-[#162456] text-white font-semibold p-3 disabled:opacity-50">{saving ? 'Creating administrator...' : 'Create administrator and continue'}</button>
       </form>
     </main>

@@ -1,3 +1,4 @@
+import { PasswordInput } from '../../components/PasswordInput';
 import React, { useEffect, useState } from 'react';
 import { InitialSetup } from './InitialSetup';
 import { useAuthStore } from '../../store/authStore';
@@ -145,8 +146,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigate }) => {
               </label>
               <div className="relative">
                 <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                <input
-                  type="password"
+                <PasswordInput
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}

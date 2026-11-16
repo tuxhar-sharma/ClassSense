@@ -45,6 +45,10 @@ Verify login, course rosters, attendance history and face matching after startup
 
 ## First-time setup and real accounts
 
+New student registrations use the full name with whitespace removed followed by `123@bBPIT` (for example, `RahulSharma123@bBPIT`). Registration shows the initial password with a Show/Hide control. After signing in, use **Change password** in the header and enter the current password to choose a private replacement. Existing account passwords are unchanged. Login, registration and password-change fields support Show/Hide.
+
+Administrators can delete a student from **Total Enrolled Students**. Verified faculty can delete enrolled students from **Class Roster & Enrollment** for their assigned active courses. The confirmation explains that this permanently removes the account, biometric template, enrollments and linked attendance records across every course. Students cannot delete accounts through this endpoint.
+
 Open http://localhost:5173 and create your administrator with your own name, email, and password. Setup is available only on localhost and closes after an administrator exists. There are no default credentials, sample courses, or generated attendance histories.
 
 1. Students register with a clear selfie and consent. Existing students should open Face Enrollment and re-enroll if a current template is missing.

@@ -11,7 +11,7 @@ class RegistrationRequest(BaseModel):
     @field_validator('password', check_fields=False)
     @classmethod
     def validate_password_bytes(cls, value):
-        if len(value.encode('utf-8')) > 72:
+        if value is not None and len(value.encode('utf-8')) > 72:
             raise ValueError('Password must be at most 72 UTF-8 bytes.')
         return value
 
@@ -33,7 +33,7 @@ class LoginRequest(RegistrationRequest):
 
 class StudentRegisterRequest(RegistrationRequest):
     email: EmailStr
-    password: str = Field(..., min_length=6)
+    password: Optional[str] = Field(default=None, min_length=6)
     full_name: str = Field(min_length=1, max_length=255)
     enrollment_no: str = Field(min_length=1, max_length=50)
     semester: str = "6th"
@@ -55,6 +55,10 @@ class FacultyRegisterRequest(RegistrationRequest):
 
 class FaceEnrollRequest(BaseModel):
     photo_base64: str # Base64 encoded selfie image
+
+class ChangePasswordRequest(RegistrationRequest):
+    current_password: str
+    password: str = Field(min_length=8, max_length=72)
 
 class InitialAdminRequest(RegistrationRequest):
     email: EmailStr

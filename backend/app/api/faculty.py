@@ -26,6 +26,22 @@ from app.services.timetable_management import faculty_courses, cohort_key
 
 router = APIRouter(tags=["Faculty"])
 
+@router.delete("/students/{student_id}")
+def delete_student(student_id: str, current_user: User = Depends(require_role(["faculty", "admin"])), db: Session = Depends(get_db)):
+    student = db.get(Student, student_id)
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found.")
+    if current_user.role == "faculty":
+        allowed_courses = {course.id for course in faculty_courses(db, current_user.faculty_profile.id)}
+        if not any(enrollment.course_id in allowed_courses for enrollment in student.enrollments):
+            raise HTTPException(status_code=403, detail="You can delete only students enrolled in your assigned courses.")
+    # Let database ON DELETE cascades remove linked records and biometric data.
+    from sqlalchemy import delete
+    user_id = student.user_id
+    db.execute(delete(User).where(User.id == user_id))
+    db.commit()
+    return {"message": "Student account and linked records deleted."}
+
 @router.get("/courses/{course_id}/sessions")
 def list_course_sessions(course_id: str, current_user: User = Depends(require_role(["faculty", "admin"])), db: Session = Depends(get_db)):
     owned_course(course_id, current_user, db)

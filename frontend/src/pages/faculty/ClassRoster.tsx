@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { api } from '../../api/client';
+import { api, apiRequest } from '../../api/client';
 import { useAuthStore } from '../../store/authStore';
 import { FacultyCourse } from '../../types';
 interface Student { id: string; full_name: string; enrollment_no: string; face_enrolled: boolean }
@@ -45,6 +45,17 @@ export function ClassRoster({ initialCourseId }: { initialCourseId?: string }) {
     } catch (error) { setError(error instanceof Error ? error.message : 'Unable to enroll students.'); }
     finally { setSaving(false); }
   }
+  async function deleteStudent(student: Student) {
+    if (!window.confirm(`Permanently delete ${student.full_name}? This removes their login, face template, enrollments and attendance records across all courses, not just this roster. This cannot be undone.`)) return;
+    setSaving(true); setError(''); setMessage('');
+    try {
+      await apiRequest(`/students/${student.id}`, { method: 'DELETE' });
+      setRoster(await api.getCourseRoster(courseId));
+      setMessage('Student account and linked records deleted.');
+      window.dispatchEvent(new Event('classsense-data-changed'));
+    } catch (error) { setError(error instanceof Error ? error.message : 'Unable to delete student.'); }
+    finally { setSaving(false); }
+  }
   const course = courses.find(course => course.id === courseId);
   const visible = (roster?.eligible_students || []).filter(student => `${student.full_name} ${student.enrollment_no}`.toLowerCase().includes(query.toLowerCase().trim()));
   const allSelected = visible.length > 0 && visible.every(student => selected.has(student.id));
@@ -65,7 +76,7 @@ export function ClassRoster({ initialCourseId }: { initialCourseId?: string }) {
         {visible.length ? <div className="overflow-x-auto"><table className="w-full text-sm text-left"><thead><tr className="border-b"><th className="p-2"><input type="checkbox" aria-label="Select all students shown" checked={allSelected} disabled={saving} onChange={() => setSelected(current => { const next = new Set(current); visible.forEach(student => allSelected ? next.delete(student.id) : next.add(student.id)); return next; })} /></th><th className="p-2">Student</th><th className="p-2">Enrollment number</th><th className="p-2">Face template</th></tr></thead><tbody>{visible.map(student => <tr key={student.id} className="border-b"><td className="p-2"><input type="checkbox" aria-label={`Select ${student.full_name}`} checked={selected.has(student.id)} disabled={saving} onChange={() => toggle(student.id)} /></td><td className="p-2">{student.full_name}</td><td className="p-2">{student.enrollment_no}</td><td className="p-2">{student.face_enrolled ? 'Enrolled' : 'Selfie enrollment needed'}</td></tr>)}</tbody></table></div> : <p className="text-sm text-slate-500">{query ? 'No students match your search.' : 'No unenrolled students match this class. Students must register with the branch, semester and section shown above.'}</p>}
         <button disabled={saving || !selected.size} onClick={() => { void enroll(); }} className="px-4 py-2 rounded-lg bg-[#162456] text-white text-sm font-semibold disabled:opacity-50">{saving ? 'Enrolling...' : `Enroll selected students (${selected.size})`}</button>
       </section>}
-      <section className="bg-white border rounded-xl p-4 space-y-3"><h2 className="font-bold">Enrolled in this class ({roster.enrolled_students.length})</h2>{roster.enrolled_students.length ? <ul className="divide-y">{roster.enrolled_students.map(student => <li key={student.id} className="py-3 flex flex-wrap justify-between gap-2 text-sm"><span className="font-medium">{student.full_name} · {student.enrollment_no}</span><span className="text-slate-500">{student.face_enrolled ? 'Ready for face recognition' : 'Selfie enrollment needed'}</span></li>)}</ul> : <p className="text-sm text-slate-500">Enroll students above to build your attendance roster.</p>}</section>
+      <section className="bg-white border rounded-xl p-4 space-y-3"><h2 className="font-bold">Enrolled in this class ({roster.enrolled_students.length})</h2>{roster.enrolled_students.length ? <ul className="divide-y">{roster.enrolled_students.map(student => <li key={student.id} className="py-3 flex flex-wrap justify-between gap-2 text-sm"><span className="font-medium">{student.full_name} · {student.enrollment_no}</span><span className="text-slate-500">{student.face_enrolled ? 'Ready for face recognition' : 'Selfie enrollment needed'}</span><button disabled={saving} onClick={() => { void deleteStudent(student); }} className="text-red-700 border border-red-200 rounded px-2 py-1 disabled:opacity-50">Delete student account</button></li>)}</ul> : <p className="text-sm text-slate-500">Enroll students above to build your attendance roster.</p>}</section>
     </>}
   </div>;
 }

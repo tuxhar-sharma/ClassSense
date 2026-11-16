@@ -4,6 +4,7 @@ import { api } from './api/client';
 
 // Shared Components
 import { Navbar } from './components/Navbar';
+import { ChangePassword } from './pages/auth/ChangePassword';
 import { Sidebar } from './components/Sidebar';
 
 // Auth Pages
@@ -89,6 +90,7 @@ export const App: React.FC = () => {
 
   // Render main authenticated shell
   const renderContent = () => {
+    if (currentPage === 'change-password') return <ChangePassword />;
     // Student Views
     if (user?.role === 'student') {
       switch (currentPage) {

@@ -54,6 +54,7 @@ export const Navbar: React.FC<{onNavigate:(page:string)=>void}> = ({onNavigate})
             </div>
 
             {/* Logout Button */}
+            <button onClick={() => onNavigate('change-password')} className="text-xs text-blue-700 hover:underline">Change password</button>
             <button
               onClick={() => logout()}
               title="Sign Out"

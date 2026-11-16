@@ -1,3 +1,4 @@
+import { PasswordInput } from '../../components/PasswordInput';
 import React, { useState, useRef, useEffect } from 'react';
 import { api } from '../../api/client';
 import { useAuthStore } from '../../store/authStore';
@@ -11,7 +12,7 @@ export const StudentRegister: React.FC<StudentRegisterProps> = ({ onNavigate }) 
   const [fullName, setFullName] = useState('');
   const [enrollmentNo, setEnrollmentNo] = useState('');
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const password = fullName.replace(/\s/g, '') + '123@bBPIT';
   const [branch, setBranch] = useState('Information Technology');
   const [semester, setSemester] = useState('');
   const [section, setSection] = useState('');
@@ -102,7 +103,6 @@ export const StudentRegister: React.FC<StudentRegisterProps> = ({ onNavigate }) 
     try {
       const res = await api.registerStudent({
         email,
-        password,
         full_name: fullName,
         enrollment_no: enrollmentNo,
         semester,
@@ -197,15 +197,15 @@ export const StudentRegister: React.FC<StudentRegisterProps> = ({ onNavigate }) 
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Password</label>
-                <input
-                  type="password"
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Initial password</label>
+                <PasswordInput
                   required
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="At least 6 characters"
+                  readOnly
+                  autoComplete="off"
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-[#162456] outline-none"
                 />
+                <p className="mt-1 text-xs text-slate-500">Your name without spaces + 123@bBPIT. Save this password and change it after signing in using Change password.</p>
               </div>
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">Branch</label>
