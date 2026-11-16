@@ -1,6 +1,9 @@
 name: Backend health check
 
 on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/backend-health.yml']
   schedule:
     - cron: '2-59/5 * * * *'
   workflow_dispatch:
@@ -13,11 +16,10 @@ concurrency:
 
 jobs:
   health:
-    if: ${{ vars.RENDER_HEALTH_URL != '' }}
     runs-on: ubuntu-latest
     timeout-minutes: 4
     env:
-      HEALTH_URL: ${{ vars.RENDER_HEALTH_URL }}
+      HEALTH_URL: ${{ vars.RENDER_HEALTH_URL || 'https://classsense-api.onrender.com/health' }}
     steps:
       - name: Check backend and database
         shell: bash
