@@ -1,7 +1,10 @@
 import { useAuthStore } from '../store/authStore';
 import type { DepartmentTimetable } from '../types';
 
-const API_BASE = (import.meta.env.VITE_API_BASE_URL || "/api/v1").replace(/\/$/, '');
+const defaultApiBase = import.meta.env.PROD
+  ? "https://classsense-api.onrender.com/api/v1"
+  : "/api/v1";
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || defaultApiBase).replace(/\/$/, '');
 export const timetableTemplateUrl = `${API_BASE}/admin/timetables/template.csv`;
 
 export async function apiRequest<T>(
