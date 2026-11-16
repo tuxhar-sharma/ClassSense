@@ -36,8 +36,14 @@ class FaceRecognitionService:
         try:
             import onnxruntime as ort
             from insightface.model_zoo.scrfd import SCRFD
-            recognizer = ort.InferenceSession(settings.ARCFACE_MODEL_PATH, providers=["CPUExecutionProvider"])
-            detector_session = ort.InferenceSession(settings.FACE_DETECTOR_MODEL_PATH, providers=["CPUExecutionProvider"])
+            options = ort.SessionOptions()
+            options.intra_op_num_threads = settings.ONNX_THREADS
+            options.inter_op_num_threads = 1
+            options.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL
+            options.enable_cpu_mem_arena = False
+            options.enable_mem_pattern = False
+            recognizer = ort.InferenceSession(settings.ARCFACE_MODEL_PATH, sess_options=options, providers=["CPUExecutionProvider"])
+            detector_session = ort.InferenceSession(settings.FACE_DETECTOR_MODEL_PATH, sess_options=options, providers=["CPUExecutionProvider"])
             detector = SCRFD(model_file=settings.FACE_DETECTOR_MODEL_PATH, session=detector_session)
             detector.prepare(ctx_id=-1, input_size=(640, 640), det_thresh=0.7)
             if recognizer.get_inputs()[0].shape[1:] != [3, 112, 112]:

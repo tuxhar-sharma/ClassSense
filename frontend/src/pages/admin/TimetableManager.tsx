@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { apiRequest } from '../../api/client';
+import { apiRequest, timetableTemplateUrl } from '../../api/client';
 import type { PublishedSlot, TimetableDraft } from '../../types/timetable';
 
 const SEMESTERS = ['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th'];
@@ -35,7 +35,7 @@ export function TimetableManager() {
   };
   const template = async () => {
     try {
-      const response = await fetch('/api/v1/admin/timetables/template.csv', {headers:{Authorization:`Bearer ${localStorage.getItem('classsense_token')}`}});
+      const response = await fetch(timetableTemplateUrl, {headers:{Authorization:`Bearer ${localStorage.getItem('classsense_token')}`}});
       if (!response.ok) throw new Error('Unable to download template.');
       download('ClassSense_Timetable_Template.csv', await response.text(), 'text/csv');
     } catch(error) { setError(error instanceof Error ? error.message : 'Template download failed.'); }

@@ -24,7 +24,24 @@ npm.cmd --prefix frontend ci
 
 `start.ps1 -Install` also installs dependencies. Model weights, local databases, private keys, dependencies, and generated build files are excluded from Git.
 
-Optional configuration: `backend/.env.example` and `frontend/.env.example`. SQLite uses `backend/classsense.db`; PostgreSQL uses psycopg. Templates are encrypted text fields matched in application memory, rather than a database vector index.
+Configuration: `backend/.env.example` and `frontend/.env.example`. Use PostgreSQL for a shared deployment; without configuration, the existing local SQLite database remains available. Templates are encrypted text fields matched in application memory, rather than a database vector index.
+
+### Move existing data to PostgreSQL
+
+Stop the backend before transferring data and keep it stopped until the switch is verified. Back up `backend/classsense.db` and `backend/.secrets` together. Initialize the SQLite schema with the current application before changing its connection URL if upgrading an older installation.
+
+Install PostgreSQL locally and create an empty `classsense` database, or start the existing Compose database with `docker compose up -d db`. Copy `backend/.env.example` to `backend/.env` and set `DATABASE_URL` to your PostgreSQL connection URL. The example credentials match the development Compose defaults; use private credentials for deployments. URL-encode special characters in connection passwords.
+
+From the project root, with the backend stopped:
+
+```powershell
+.\.venv\Scripts\python.exe backend\migrate_sqlite_to_postgres.py
+.\start.ps1
+```
+
+The transfer opens SQLite read-only, checks that the target application tables are empty, copies rows in dependency order, and checks each table's row count before committing. Failure rolls back inserted rows; empty tables created during preparation may remain. It preserves IDs, password hashes, and encrypted biometric templates. Retain the existing biometric key at `backend/.secrets/biometric.key`. Do not run the full container stack against the migrated data without securely provisioning that same key into its `biometric_keys` volume.
+
+Verify login, course rosters, attendance history and face matching after startup. Keep the SQLite backup until verification is complete. To roll back before accepting new writes, stop the backend, remove the PostgreSQL `DATABASE_URL` from `backend/.env`, and restart. Changes made in PostgreSQL are not copied back automatically.
 
 ## First-time setup and real accounts
 

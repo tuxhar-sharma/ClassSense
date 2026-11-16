@@ -2,7 +2,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import List
 import os
 from pathlib import Path
-from pydantic import Field
+from pydantic import Field, model_validator
 import secrets
 
 
@@ -23,6 +23,7 @@ def local_jwt_secret():
         return key
 
 class Settings(BaseSettings):
+    ENVIRONMENT: str = "local"
     PROJECT_NAME: str = "BPIT Smart Attendance System"
     VERSION: str = "1.0.0"
     API_V1_STR: str = "/api/v1"
@@ -36,6 +37,8 @@ class Settings(BaseSettings):
     # SQLite or PostgreSQL; encrypted templates are matched in memory.
     DATABASE_URL: str = os.getenv("DATABASE_URL", f"sqlite:///{Path(__file__).resolve().parents[1] / 'classsense.db'}")
     BIOMETRIC_KEY_FILE: str = str(Path(__file__).resolve().parents[1] / '.secrets' / 'biometric.key')
+    BIOMETRIC_KEY_BASE64: str = ""
+    ONNX_THREADS: int = Field(default=1, ge=1, le=8)
     ARCFACE_MODEL_PATH: str = str(Path(__file__).resolve().parents[1] / 'models' / 'w600k_r50.onnx')
     FACE_DETECTOR_MODEL_PATH: str = str(Path(__file__).resolve().parents[1] / 'models' / 'det_10g.onnx')
     MAX_IMAGE_BYTES: int = 10 * 1024 * 1024
@@ -64,5 +67,16 @@ class Settings(BaseSettings):
     ]
 
     model_config = SettingsConfigDict(case_sensitive=True, env_file=str(Path(__file__).resolve().parents[1] / '.env'), extra='ignore')
+
+    @model_validator(mode="after")
+    def validate_deployment(self):
+        if self.ENVIRONMENT == "production":
+            if not self.DATABASE_URL.startswith(("postgresql://", "postgresql+psycopg://")):
+                raise ValueError("Production deployment requires a PostgreSQL DATABASE_URL.")
+            if not self.BIOMETRIC_KEY_BASE64:
+                raise ValueError("Set BIOMETRIC_KEY_BASE64 to the existing biometric key for deployment.")
+            if len(self.SECRET_KEY) < 32:
+                raise ValueError("Set SECRET_KEY to a persistent secret of at least 32 characters.")
+        return self
 
 settings = Settings()

@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: classsense-api
+    runtime: docker
+    plan: free
+    dockerContext: ./backend
+    dockerfilePath: ./backend/Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: SECRET_KEY
+        generateValue: true
+      - key: BIOMETRIC_KEY_BASE64
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      - key: ONNX_THREADS
+        value: "1"

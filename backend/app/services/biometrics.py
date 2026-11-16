@@ -13,6 +13,11 @@ CONTEXT = b"classsense:face-embedding:v1"
 
 @lru_cache(maxsize=1)
 def cipher():
+    if settings.BIOMETRIC_KEY_BASE64:
+        key = base64.b64decode(settings.BIOMETRIC_KEY_BASE64, validate=True)
+        if len(key) != 32:
+            raise RuntimeError("BIOMETRIC_KEY_BASE64 must encode exactly 32 bytes.")
+        return AESGCM(key)
     path = Path(settings.BIOMETRIC_KEY_FILE)
     path.parent.mkdir(parents=True, exist_ok=True)
     try:

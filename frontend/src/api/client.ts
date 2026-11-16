@@ -2,6 +2,7 @@ import { useAuthStore } from '../store/authStore';
 import type { DepartmentTimetable } from '../types';
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL || "/api/v1").replace(/\/$/, '');
+export const timetableTemplateUrl = `${API_BASE}/admin/timetables/template.csv`;
 
 export async function apiRequest<T>(
   endpoint: string,
